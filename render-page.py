@@ -1,37 +1,38 @@
 #!/usr/bin/env python
 
-import sys, os, argparse, getpass, time, hashlib, random
-from PIL import Image
+
+# render a page of a passport wallet
+import sys, os, argparse, getpass, time, hashlib
 from subprocess import Popen, PIPE
 from Crypto.Cipher import AES
-
-hash_iterations = 2400000
-text_width = 45
-default_rounds = 14
-default_background = './images/passport-background-lines.png'
+from PIL import Image
+from common import default_iterations, default_background
 
 
-localtime   = time.localtime()
-print time.strftime('%Y-%m-%d %H:%M:%S', localtime)
+# configure logging
+import logging
+logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
 
 
 # execute shell command
 def cmd(str):
-    sys.stderr.write(' '.join(str) + '\n')
+    logging.debug('$ ' + ' '.join(str))
     process = Popen(str, stderr=PIPE, stdout=PIPE)
     outdata, errdata = process.communicate()
     if len(outdata.strip()) > 0:
-        print outdata
+        logging.debug('STDOUT: ' + outdata)
     if len(errdata.strip()) > 0:
-        print errdata
+        logging.debug('STDERR: ' + errdata)
     if (process.returncode):
         exit(1)
 
 
-def chunkstring(string, length):
-    return (string[0+i:length+i] for i in range(0, len(string), length))
+# add line breaks to a string
+def multiline(string, width):
+    return (string[0+i:width+i] for i in range(0, len(string), width))
 
 
+# validate integer type
 def integer(val):
     try:
         return int(val)
@@ -40,80 +41,122 @@ def integer(val):
         raise argparse.ArgumentTypeError(msg)
     
 
+# validate positive integer
 def positive_integer(val):
     if (integer(val) and val > 0):
         return val
     else:
         msg = '{} is not positive'.format(val)
         raise argparse.ArgumentTypeError(msg)
+
+# extract item from lists of size 1
+def unwrap(obj):
+    if isinstance(obj, list) and len(obj) == 1:
+        (extracted,) = obj
+        return extracted
+    else:
+        return obj
+
+# add spaces to string s until its length is a multiple of m
+def pad(s, m):
+    pad_length = m - (len(s) % m)
+    spaces = ' ' * pad_length
+    return s + spaces
     
 
-parser = argparse.ArgumentParser(description='Generate a secure, mnemonic paper wallet for a crypto-currency')
+# command line arguments
+parser = argparse.ArgumentParser(description='Generate a secure, mnemonic paper wallet for a crypto-currency address')
 parser.add_argument('-s', '--symbol', help='crypto-currency symbol', nargs=1, required=True)
+parser.add_argument('-n', '--name', help='crypto-currency name (default is name lookup by symbol)', nargs=1, required=False)
 parser.add_argument('-a', '--address', help='public address', nargs=1, required=True)
 parser.add_argument('-k', '--privkey', help='private key', nargs=1, required=True)
-parser.add_argument('-n', '--name', help='crypto-currency name (can override table lookup)', nargs=1, required=False)
-parser.add_argument('-i', '--icon', help='crypto-currency icon file (default images/[symbol]-logo.png)', nargs=1, required=False)
-parser.add_argument('-r', '--rounds', help='bcrypt rounds (default {})'.format(default_rounds), nargs=1, type=positive_integer, default=default_rounds, required=False)
+parser.add_argument('-i', '--icon', help='crypto-currency icon file (default ./images/[symbol]-logo.png)', nargs=1, required=False)
+parser.add_argument('-t', '--iterations', help='HASH iterations (default {})'.format(default_iterations), nargs=1, type=positive_integer, default=default_iterations, required=False)
 parser.add_argument('-b', '--background', help='background image (default "{}")'.format(default_background), nargs=1, default=default_background, required=False)
-parser.add_argument('-p', '--password', help='encryption password (you will be prompted if not provided)', nargs=1, required=False)
-parser.add_argument('-o', '--output', help='output filename for PNG file (default [symbol]-page.png', nargs=1, required=False)
+parser.add_argument('-p', '--password', help='encryption password (user is prompted if not present)', nargs=1, required=False)
+parser.add_argument('-o', '--output', help='output filename (default "./passport-page-[symbol].png")', nargs=1, required=False)
 parser.add_argument('-c', '--comment', help='add an optional comment', nargs=1, required=False)
 args = vars(parser.parse_args())
 
 
-# dump args
-for k in args.keys():
-    v = args[k]
-    print k, args[k]
-
-
 # currency symbol
-symbol = args['symbol'][0]
-print 'symbol', symbol
+symbol = args['symbol'][0].upper()
+logging.debug('SYMBOL {}'.format(symbol))
 
 
 # currency name
 cname = None
+explorer = None
+with open('assets.csv') as fp:
+    lines = fp.readlines()
+    for line in lines:
+        sym, name, link = line.split(',')
+        if (sym.upper() == symbol.upper()):
+            cname = name.strip()
+            if len(link.strip()) > 0:
+                explorer = link.strip()
+                
 if args['name'] is not None:
-    cname = args['name'][0]
-    
-else:
-    with open('assets.csv') as fp:
-        lines = fp.readlines()
-        for line in lines:
-            sym, name, link = line.split(',')
-            if (sym.upper() == symbol.upper()):
-                cname = name.strip()
-                explorer = link
+    cname = args['name'][0]    
 
 if cname is not None:
-    print 'Currency name:', cname
+    logging.debug('NAME {}'.format(cname))
 else:
-    print 'could not determine currency name for symbol {}'.format(symbol)
-    exit(0)
+    logging.critical('Could not determine currency name for symbol {}'.format(symbol))
+    exit(1)
+
+
+# public address
+address = args['address'][0]
+logging.debug('ADDRESS {}'.format(address))
+
+
+# private key
+privkey = args['privkey'][0]
+
+
+# block explorer
+link = None
+if explorer is not None:
+    link = explorer.format(address)
+    logging.debug('EXPLORER {}'.format(link))
+else:
+    logging.warning('No block explorer found for currency {}'.format(symbol))
+    link = address 
 
 
 # validate icon file
-icon_file = None
+file_icon = None
 if args['icon'] is not None:
-    (icon_file,) = args['icon']
+    (file_icon,) = args['icon']
 else:
-    icon_file = './images/icon-{}.png'.format(symbol.lower())
+    file_icon = './images/icon-{}.png'.format(symbol.lower())
 
-print 'icon_file', icon_file
-if (os.path.isfile(icon_file)):
-    print 'found icon file {}'.format(icon_file)
+if (os.path.isfile(file_icon)):
+    logging.debug('ICON FILE {}'.format(file_icon))
 else:
-    print 'could not find icon file {}'.format(icon_file)
-    exit(0)
+    logging.critical('Icon file does not exist: {}'.format(file_icon))
+    exit(1)
 
-    
+
+# hash iterations
+hash_iterations = unwrap(args['iterations'])
+logging.debug('ITERATIONS {:,}'.format(hash_iterations))
+
+
+# background image
+file_background = unwrap(args['background'])
+if (os.path.isfile(file_background)):
+    logging.debug('BACKGROUND {}'.format(file_background))
+else:
+    logging.critical('Background file does not exist: {}'.format(file_background))
+    exit(1)
+
+
 # ask for password if not present
 pwd = None
 if args['password'] is not None:
     pwd = args['password'][0]
-    
 else:
     matching = False
     while not matching:
@@ -122,38 +165,33 @@ else:
         if pwd == verify:
             matching = True
         else:
-            print 'passwords do not match'
-
-print 'PWD = {}'.format(pwd)
+            logging.error('Passwords do not match')
 
 
-ofile = None
+# output filename
+file_output = None
 if args['output'] is not None:
-    ofile = args['output'][0]
-    
+    file_output = args['output'][0]
 else:
-    ofile = 'passport-{}.png'.format(symbol.lower())
-
-print 'Output file: {}'.format(ofile)
-
-
-file_background = args['background']
-print 'Background file: {}'.format(file_background)
+    file_output = 'passport-page-{}.png'.format(symbol.lower())
+logging.debug('OUTPUT FILE {}'.format(file_output))
 
 
-address = args['address'][0]
-print 'Address: {}'.format(address)
-
-
+# comment field
 comment = None
 if args['comment'] is not None:
     comment = args['comment'][0]
+    logging.debug('COMMENT {}'.format(comment))
+else:
+    logging.debug('No comment present')
 
-privkey = args['privkey'][0]
 
+#
+# generate passport image
+#
 
 # compute average color of icon
-im = Image.open(icon_file)
+im = Image.open(file_icon)
 xs,ys = im.size
 count = 0.0
 rsum = 0.0
@@ -172,180 +210,158 @@ ravg = int(round(rsum / count))
 gavg = int(round(gsum / count))
 bavg = int(round(bsum / count))
 
-print 'AVG COLOR [R:{} G:{} B:{}]'.format(ravg, gavg, bavg)
+# light and dark compliments
 rgb_avg = hex(ravg)[2:].upper() + hex(gavg)[2:].upper() + hex(bavg)[2:].upper()
+logging.debug('RGB_AVG #' + rgb_avg)
 
 darkness = 2.5
 rgb_dark = hex(int(ravg/darkness))[2:].upper() + hex(int(gavg/darkness))[2:].upper() + hex(int(bavg/darkness))[2:].upper()
+logging.debug('RGB_DARK #' + rgb_dark)
 
 lightness = 2.0
 rgb_light = hex(256-int((256-ravg)/lightness))[2:].upper() + hex(256-int((256-gavg)/lightness))[2:].upper() + hex(256-int((256-bavg)/lightness))[2:].upper()
+logging.debug('RGB_LIGHT #' + rgb_light)
 
-file_resized = '/home/rseeger/Desktop/passport-resized.png'
-icon_width = 150
-padding = 25
-
-col1 = padding
-col2 = col1 + icon_width + padding
-col3 = col2 + 100
-
-row1 = padding
-row2 = row1 + icon_width + padding
 
 # create coin graphic
+icon_width = 150
+file_resized = '/tmp/passport-resized-icon-{}.png'.format(os.getpid())
 dimensions = '{}x{}!'.format(icon_width, icon_width)
-cmd(['convert', icon_file, '-resize', dimensions, file_resized])
+cmd(['convert', file_icon, '-resize', dimensions, file_resized])
+
 
 # add coin graphic to background
-position = '+{}+{}'.format(col1, row1)
-file_template = '/home/rseeger/Desktop/passport-template.png'
-cmd(['composite', '-geometry', position, file_resized, file_background, file_template])
+position = '+35+25'
+cmd(['composite', '-geometry', position, file_resized, file_background, file_output])
+os.remove(file_resized)
 
 
-# add currency header
+# add currency symbol header
 size = '128'
-position = '+200+140'
+position = '+200+160'
 font = 'DejaVu-Sans-Bold'
-file_header = '/home/rseeger/Desktop/passport-header.png'
-
-#cmd(['convert', file_template, '-font', font, '-gravity', 'center', '-fill', '#{}'.format(rgb_avg), '-pointsize', '96', '-annotate', position, symbol, file_header])
-
-cmd(['convert', file_template, '-font', font, '-fill', '#{}'.format(rgb_light), '-pointsize', size, '-annotate', position, symbol, file_header])
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_light), '-pointsize', size, '-annotate', position, symbol, file_output])
 
 
+# currency name
+size = '18'
+position = '+245+240'
+font = 'Helvetica-Bold'
 txt = "Currency"
-position = '+260+235'
-font = 'Helvetica-Bold'
-size = '16'
-#font = 'Courier-Bold'
-cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-txt = cname
-position = '+340+235'
+position = '+340+240'
 font = 'Courier-Bold'
-cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+txt = cname
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
-txt = "Address"
-position = '+260+265'
+# public address
+position = '+245+265'
 font = 'Helvetica-Bold'
-#font = 'Courier-Bold'
-cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+txt = "Address"
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-txt = '\n'.join(chunkstring(address, 17))
 position = '+340+265'
 font = 'Courier-Bold'
-cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+txt = '\n'.join(multiline(address, 17))
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
-txt = "Created"
-position = '+260+315'
+# creation date
+position = '+245+315'
 font = 'Helvetica-Bold'
-cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+txt = "Created"
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-localtime   = time.localtime()
-txt = time.strftime("%Y-%m-%d", localtime)
 position = '+340+315'
 font = 'Courier-Bold'
-cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+localtime = time.localtime()
+txt = time.strftime("%Y-%m-%d", localtime)
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
 # optional note
 if (comment is not None):
-    txt = "Note"
-    position = '+260+345'
+    position = '+245+345'
     font = 'Helvetica-Bold'
-    cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+    txt = "Notes"
+    cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-    txt = comment
     position = '+340+345'
     font = 'Courier-Bold'
-    cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
-
+    txt = comment
+    cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
 # make qr code
 w = icon_width * 1.25
-file_qr = '/home/rseeger/Desktop/passport-qr.png'
+file_qr = '/tmp/passport-qr-code-{}.png'.format(os.getpid())
 position = '+40+200'
 
 cmd(['qrencode', '--foreground', rgb_dark, '-o', file_qr, explorer.format(address)])
-#cmd(['qrencode -o file {} --foreground={}'.format(symbol, address, rgb_dark)])
 cmd(['convert', file_qr, '-resize', '{}x{}'.format(w,w), file_qr])
-cmd(['composite', '-geometry', position, file_qr, file_header, file_header])
+cmd(['composite', '-geometry', position, file_qr, file_output, file_output])
+os.remove(file_qr)
 
 
-# convert private key into word sequence
-# words = bip39(AES(private_key, bcrypt(password, rounds)))
+#
+# word sequence = BIP39(AES(private_key, SHA256^iterations(password + salt)))
+#
+
+# choose salt
+salt = address[1:17]
+logging.debug('SALT [{}] {}'.format(len(salt), salt))
+
+
+# description
+size = '16'
+position = '+30+450'
+font = 'Helvetica-Bold'
+txt = 'BIP39(AES(pkey,SHA256^{}(pass+\'{}\'))) ='.format(hash_iterations, salt)
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
 # stretch key
-h = pwd + address
+h = pwd + salt
 start = time.time()
-sys.stdout.write('key stretching')
 
 for i in xrange(hash_iterations):
     h = hashlib.sha256(h).hexdigest()
-
-    if (i % 100000) == 0:
-        sys.stdout.write('.')
-        sys.stdout.flush()
+    if ((i+1) % 1000000) == 0:
+        elapsed = time.time() - start
+        logging.debug('{}m hashes in {} seconds'.format(round(i/1000000.0, 1), round(elapsed, 1)))
 
 elapsed = time.time() - start
-print '\n{:,}m SHA256 iterations in {} seconds'.format(round(i/1000000.0, 1), round(elapsed, 1))
+logging.debug('{}m hashes in {} seconds'.format(round(i/1000000.0, 1), round(elapsed, 1)))
 
 hashed_password = h
-print 'hash[{}] {}'.format(len(hashed_password), hashed_password)
-
-salt = address[1:17]
-print 'salt[{}] {}'.format(len(salt), salt)
-
-
-# add spaces to string s until its length is a multiple of m
-def pad(s, m):
-    pad_length = m - (len(s) % m)
-    spaces = ' ' * pad_length
-    return s + spaces
+logging.debug('HASH [{}] {}'.format(len(hashed_password), hashed_password))
 
 
 # 32-byte AES key
 aes_key = hashed_password[-32:]
-print 'aes_key [{}] {}'.format(len(aes_key), aes_key)
+logging.debug('AES_KEY [{}] {}'.format(len(aes_key), aes_key))
 
 
 # pad input text
 payload = pad(privkey, 16)
-print 'payload [{}] {}'.format(len(payload), payload)
+logging.debug('PAYLOAD [{}] {}'.format(len(payload), payload))
 
 
 # AES encrypt private key with hashed password
-salt = address[1:17]
 e = AES.new(aes_key, AES.MODE_CBC, salt)
 cipher_text = e.encrypt(payload)
-print 'cipher_text', '[{}]'.format(cipher_text), len(cipher_text), type(cipher_text)
+logging.debug('CIPHER_TEXT length {} bytes'.format(len(cipher_text)))
 
 
-# debug: print bit representation of cipher text
-def bits(s):
-    bytes = [ord(b) for b in s]
-    for b in bytes:
-        for i in xrange(8):
-            if (2**i & b):
-                sys.stdout.write('X')
-            else:
-                sys.stdout.write('O')
-    sys.stdout.write('\n')
-            
-bits(cipher_text)
-
-                
-# test decrypt
+# sanity check: decrypt
 decryption_suite = AES.new(aes_key, AES.MODE_CBC, salt)
 plain_text = decryption_suite.decrypt(cipher_text)
 if plain_text == payload:
-    print 'decryption suceeded'
+    logging.debug('Decryption suceeded')
 else:
-    print 'decryption failed'
+    logging.critical('Decryption sanity check failed!')
     exit(1)
 
 
@@ -357,54 +373,45 @@ word_value = 0
 
 for byte in bytes(cipher_text):
     o = ord(byte)
-    #print 'byte_value', o
 
     for bit in range(8):
         if (i - word_cursor) >= 11:
-            #print i, 'word_value', word_value
             chunks.append(word_value)
             word_cursor = i
             word_value = 0
 
-        #print i, 2**bit, o & 2**bit
         if o & 2**bit:
             word_value += int(2**(i-word_cursor))
-            #print 'new word_value', word_value
 
         i += 1
-#print i, 'final_word_value', word_value
-chunks.append(word_value)
+
+chunks.append(word_value) # remaining bits
+
 
 # load bip39 dict
 d = []
 with open('words-bip39.csv') as fp:
     d = fp.readlines()
 
-# create word list
-words = [d[i].strip() for i in chunks]
-print 'CHUNKS:', chunks
-print 'WORDS:', ' '.join(words)
 
-# add line breaks
+# create word list
+column_width = 45
+words = [d[i].strip() for i in chunks]
+
 i = 0
-txt = '"'
+txt = ''
 for word in words:
     i += len(word) + 1
-    if i > text_width:
-        txt += '\n'
+    if i > column_width:
+        txt += '\\n'
         i = len(word) + 1
     txt += word + ' '
-txt = txt[:-1] + '"'
     
 
+# add words to page
 size = '18'
-position = '+50+480'
+position = '+50+510'
 font = 'Courier-Bold'
-cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-
-txt = "BIP39(AES256(private_key, SHA256^2400000(password + salt))) ="
-size = '14'
-position = '+50+450'
-font = 'Helvetica-Bold'
-cmd(['convert', file_header, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_header])
+logging.info('Wrote {}'.format(file_output))
