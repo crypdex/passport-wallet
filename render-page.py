@@ -212,7 +212,7 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-p
 
 position = '+360+265'
 font = 'Courier-Bold'
-txt = '\n'.join(break_string(address, len(address)/2))
+txt = '\n'.join(break_string(address, len(address)/2+1))
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
