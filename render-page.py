@@ -63,13 +63,13 @@ privkey = args['privkey'][0]
 
 
 # block explorer
-link = None
+qr_link = None
 if explorer is not None:
-    link = explorer.format(address)
-    logger.debug('EXPLORER {}'.format(link))
+    qr_link = explorer.format(address)
+    logger.debug('EXPLORER {}'.format(qr_link))
 else:
     logger.warning('no block explorer found for currency {}'.format(symbol))
-    link = address 
+    qr_link = address
 
 
 # validate icon file
@@ -178,13 +178,14 @@ cmd(['convert', file_icon, '-resize', dimensions, file_logo_resized])
 
 
 # add coin graphic to background
-position = '+35+25'
+position = '+25+15'
 cmd(['composite', '-geometry', position, file_logo_resized, file_background, file_output])
 os.remove(file_logo_resized)
 
 
 # add currency symbol header
-size = str(192 - (16 * len(symbol)))
+#size = str(192 - (16 * len(symbol)))
+size = str(256 - (32 * len(symbol)))
 position = '+200+150'
 font = 'DejaVu-Sans-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_light), '-pointsize', size, '-annotate', position, symbol, file_output])
@@ -211,7 +212,7 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-p
 
 position = '+360+265'
 font = 'Courier-Bold'
-txt = '\n'.join(break_string(address, 17))
+txt = '\n'.join(break_string(address, len(address)/2))
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
@@ -243,8 +244,8 @@ if (comment is not None):
 
 # qr code drop shadow
 qr_width = icon_width * 1.25
-position = '+39+199'
-size = '{}x{}'.format(qr_width+6, qr_width+6)
+position = '+38+198'
+size = '{}x{}'.format(qr_width+4, qr_width+4)
 file_shadow = '/tmp/passport-qr-shadow-{}.png'.format(os.getpid())
 cmd(['convert', '-size', size, 'xc:#{}'.format(rgb_light), '-fill' , 'none', '-stroke', 'black', file_shadow])
 cmd(['composite', '-geometry', position, file_shadow, file_output, file_output])
@@ -253,7 +254,7 @@ cmd(['composite', '-geometry', position, file_shadow, file_output, file_output])
 # make qr code
 file_qr = '/tmp/passport-qr-code-{}.png'.format(os.getpid())
 position = '+40+200'
-cmd(['qrencode', '--foreground', rgb_dark, '-o', file_qr, explorer.format(address)])
+cmd(['qrencode', '--foreground', rgb_dark, '-o', file_qr, qr_link])
 cmd(['convert', file_qr, '-resize', '{}x{}'.format(qr_width, qr_width), file_qr])
 cmd(['composite', '-geometry', position, file_qr, file_output, file_output])
 os.remove(file_qr)
