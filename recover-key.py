@@ -1,35 +1,36 @@
 #!/usr/bin/env python
 
-
-# input words
-# input password
-# print result
-
-#import sys, os, argparse, getpass, time, hashlib, random
-#from PIL import Image
-#from subprocess import Popen, PIPE
+import sys, time, hashlib, getpass
 from Crypto.Cipher import AES
+from common import logger, default_iterations, salt_length_words
 
-import sys, time, hashlib
 
-hash_iterations = 1000000
-address = '1AmScRbGuGsYPWQNjWu7DpxYytu9yz7ZCg'
-words = 'nurse purchase topple million barely female shallow subway history saddle broken twist stage fantasy earth morning ripple deliver vessel dynamic extra change matrix era hill ketchup number museum magnet gap area dwarf hero parrot edge flame million survey sustain hub rigid cancel away twenty arrive ugly acoustic'
-pwd = 'foobar'
+# get user input
+words_input = raw_input('WORDS:').strip().lower().split()
+pwd = getpass.getpass('PASSWORD:')
+seed = ' '.join(words_input[0:salt_length_words])
+salt = hashlib.sha256(seed).hexdigest()[:16]
 
-print 'ADDRESS:', address
-print 'WORDS:', words
-print 'PWD:', pwd
+words = words_input[salt_length_words:]
+    
+logger.debug('SEED [{}] {}'.format(len(seed), seed))
+logger.debug('SALT [{}] {}'.format(len(salt), salt))
 
-# convert words to 11-bit numbers
+hash_iterations = default_iterations
+logger.debug('ITERATIONS {:,}'.format(hash_iterations))
+
+
+# load BIP39 dictionary
 with open('words-bip39.csv') as fp:
     lines = fp.readlines()
 
+    
+# convert BIP39 words to 11-bit words
 bip39_words = [line.strip() for line in lines]
-indexes = [bip39_words.index(word) for word in words.split()]
+indexes = [bip39_words.index(word) for word in words]
 
 
-# convert 11-bit chunks into 8-bit cyphertext
+# convert 11-bit words to 8-bit words of ciphertext
 i = 0
 cipher_text = ''
 byte_cursor = 0
@@ -46,48 +47,31 @@ for index in indexes:
             byte_value += int(2**(i-byte_cursor))
 
         i += 1
-#cipher_text += chr(byte_value)
 
-print 'cipher_text', '[{}]'.format(cipher_text), len(cipher_text), type(cipher_text)
+logger.debug('CIPHERTEXT length {} bytes'.format(len(cipher_text)))
 
-def bits(s):
-    bytes = [ord(b) for b in s]
-    for b in bytes:
-        for i in xrange(8):
-            if (2**i & b):
-                sys.stdout.write('X')
-            else:
-                sys.stdout.write('O')
-    sys.stdout.write('\n')
-
-bits(cipher_text)
 
 # stretch key
-h = pwd + address
+h = pwd + salt
 start = time.time()
-sys.stdout.write('key stretching')
+logger.debug('stretching key ...')
 
 for i in xrange(hash_iterations):
     h = hashlib.sha256(h).hexdigest()
-
-    if (i % 100000) == 0:
-        sys.stdout.write('.')
-        sys.stdout.flush()
+    if ((i+1) % 1000000) == 0:
+        elapsed = time.time() - start
+        logger.debug('{}m hashes in {} seconds'.format(round(i/1000000.0, 1), round(elapsed, 1)))
 
 elapsed = time.time() - start
-print '\n{:,}m SHA256 iterations in {} seconds'.format(round(i/1000000.0, 1), round(elapsed, 1))
+logger.debug('{}m hashes in {} seconds'.format(round(i/1000000.0, 1), round(elapsed, 1)))
 
 hashed_password = h
-print 'hash[{}] {}'.format(len(hashed_password), hashed_password)
+aes_key = hashed_password[:32]
+logger.debug('AES_KEY [{}] {}'.format(len(aes_key), aes_key))
 
-aes_key = hashed_password[-32:]
-print 'aes_key [{}] {}'.format(len(aes_key), aes_key)
 
-salt = address[1:17]
-print 'salt[{}] {}'.format(len(salt), salt)
-
+# decrypt
 d = AES.new(aes_key, AES.MODE_CBC, salt)
-plain_text = d.decrypt(cipher_text).strip()
-print 'plain_text', '[{}]'.format(plain_text), len(plain_text), type(plain_text)
-
+plaintext = d.decrypt(cipher_text).strip()
+logger.info('PLAINTEXT [{}] {}'.format(len(plaintext), plaintext))
 
