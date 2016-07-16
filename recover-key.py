@@ -67,7 +67,6 @@ logger.debug('{}m hashes in {} seconds'.format(round(i/1000000.0, 1), round(elap
 
 hashed_password = h
 aes_key = hashed_password[:32]
-logger.debug('AES_KEY [{}] {}'.format(len(aes_key), aes_key))
 
 
 # decrypt

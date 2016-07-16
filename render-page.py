@@ -139,15 +139,17 @@ else:
 
 # compute average color of icon
 im = Image.open(file_icon)
-xs,ys = im.size
+xs, ys = im.size
+logger.debug('ICON SIZE {}x{}'.format(xs, ys))
 count = 0.0
 rsum = 0.0
 gsum = 0.0
 bsum = 0.0
-for x in range(xs):
-    for y in range(ys):
+for x in xrange(xs):
+    for y in xrange(ys):
         (r,g,b,a) = im.getpixel((x,y))
-        if (r>0) and (g>0) and (b>0):
+        if not ((r==0 and g==0 and b==0) or
+                (r==255 and g==255 and b==255)):
             rsum += r
             gsum += g
             bsum += b
@@ -184,9 +186,8 @@ os.remove(file_logo_resized)
 
 
 # add currency symbol header
-#size = str(192 - (16 * len(symbol)))
 size = str(256 - (32 * len(symbol)))
-position = '+200+150'
+position = '+190+150'
 font = 'DejaVu-Sans-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_light), '-pointsize', size, '-annotate', position, symbol, file_output])
 
@@ -212,17 +213,18 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-p
 
 position = '+360+265'
 font = 'Courier-Bold'
-txt = '\n'.join(break_string(address, len(address)/2+1))
+#txt = '\n'.join(break_string(address, len(address)/2+1))
+txt = '\n'.join(break_string(address, 15))
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
 # creation date
-position = '+265+315'
+position = '+265+335'
 font = 'Helvetica-Bold'
 txt = "Created"
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-position = '+360+315'
+position = '+360+335'
 font = 'Courier-Bold'
 localtime = time.localtime()
 txt = time.strftime("%Y-%m-%d", localtime)
@@ -231,12 +233,12 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-p
 
 # optional note
 if (comment is not None):
-    position = '+265+345'
+    position = '+265+360'
     font = 'Helvetica-Bold'
     txt = "Notes"
     cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-    position = '+360+345'
+    position = '+360+360'
     font = 'Courier-Bold'
     txt = comment
     cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
@@ -324,13 +326,13 @@ logger.debug('DATA length {:,} bytes'.format(len(payload), payload))
 # AES encrypt private key with hashed password
 iv = salt  # shared nonce; salt for key stretching is also the AES init vector
 e = AES.new(aes_key, AES.MODE_CBC, iv)
-cipher_text = e.encrypt(payload)
-logger.debug('CIPHERTEXT length {} bytes'.format(len(cipher_text)))
+ciphertext = e.encrypt(payload)
+logger.debug('CIPHERTEXT length {} bytes'.format(len(ciphertext)))
 
 
 # sanity check: decrypt back again
 decryption_suite = AES.new(aes_key, AES.MODE_CBC, salt)
-plain_text = decryption_suite.decrypt(cipher_text)
+plain_text = decryption_suite.decrypt(ciphertext)
 if plain_text == payload:
     logger.debug('DECRYPTION sanity check passed')
 else:
@@ -344,7 +346,7 @@ chunks = []
 word_cursor = 0
 word_value = 0
 
-for byte in bytes(cipher_text):
+for byte in bytes(ciphertext):
     o = ord(byte)
 
     for bit in range(8):
@@ -358,7 +360,8 @@ for byte in bytes(cipher_text):
 
         i += 1
 
-chunks.append(word_value) # remaining bits
+if (len(ciphertext) % 16) > 0:
+    chunks.append(word_value) # remaining bits
 
 
 # convert 11-bit words to English words via BIP39
