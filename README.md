@@ -1,14 +1,35 @@
-# passport-wallet
+# Passport wallet
 
-Generates a booklet of paper-wallets for a portfolio of crypto-currencies. Each page contains the details for one currency including a public key with a QR code and a private key generically encoded as:
+## Features
 
-> `WORD_SEQ = bip39_encode(aes_encrypt(PRIV_KEY, bcrypt(PASSWORD, rounds=14)))`
+The `render-page.py` script generates a secure paper wallet for *any* crypto-currency.
 
-bcrypt is used for key stretching where one password guess should take about 10 seconds on a modern laptop. The bip39 dictionary of 2048 words maps every 11 bits of encrypted data to an english word as output.
+* No need to hide your paper wallets! The Passport paper wallet is AES encrypted.
+* Key stretching makes brute force attempts at cracking impractical.
+* Data is represened as a sequence of English words making it easy to enter without errors.
 
-![alt text](images/passport-wallet-sample.png "sample passport wallet")
+## Sample usage
 
-The private keys are then recovered with:
+You must provide at minimum the currency symbol, a public address, and
+a private key:
 
-> `PRIV_KEY = aes_decrypt(bip39_decode(WORD_SEQ), bcrypt(PASSWORD, rounds=14))`
+![alt text](images/sample-usage-render.png)
 
+![alt text](images/sample-page-btc.png)
+
+For help on the different options, run: `render-page.py -h`
+
+Use `recover-key.py` to recover the private key. Just enter the word sequence and your password:
+
+![alt text](images/sample-usage-recover.png)
+
+
+## Notes
+
+The output of `render-page.py` is a single PNG file with design elements similar to a page in a passport. The color scheme is automatically derived from the colors in the currency logo. *Any* crypto-currency address can be represented since the encryption step is generic. The ideal use case for the Passport wallet is: secure cold-storage for a portfolio of crypto-currencies where the wallets themselves can be viewed by others without compromising security.
+
+![alt text](images/sample-page-ltc-thumbnail.png)
+![alt text](images/sample-page-sjcx-thumbnail.png)
+![alt text](images/sample-page-eth-thumbnail.png)
+![alt text](images/sample-page-ppc-thumbnail.png)
+![alt text](images/sample-page-emc-thumbnail.png)

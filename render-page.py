@@ -171,7 +171,7 @@ rgb_dark = '%02X%02X%02X' % (ravg/darkness, gavg/darkness, bavg/darkness)
 logger.debug('RGB_DARK ' + rgb_dark)
 
 lightness = 2.0
-rgb_light = '%02X%02X%02X' % (256-int((256-ravg)/lightness), 256-int((256-gavg)/lightness), 256-int((256-bavg)/lightness))
+rgb_light = '%02X%02X%02X' % (255-int((255-ravg)/lightness), 255-int((255-gavg)/lightness), 255-int((255-bavg)/lightness))
 logger.debug('RGB_LIGHT ' + rgb_light)
 
 
@@ -183,14 +183,14 @@ cmd(['convert', file_icon, '-resize', dimensions, file_logo_resized])
 
 
 # add coin graphic to background
-position = '+25+15'
+position = '+55+15'
 cmd(['composite', '-geometry', position, file_logo_resized, file_background, file_output])
 os.remove(file_logo_resized)
 
 
 # add currency symbol header
-size = str(256 - (32 * len(symbol)))
-position = '+190+150'
+size = str(256 - (36 * len(symbol)))
+position = '+230+{}'.format(210 - (20 * len(symbol)))
 font = 'DejaVu-Sans-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_light), '-pointsize', size, '-annotate', position, symbol, file_output])
 
@@ -289,8 +289,8 @@ logger.debug('IVEC [{}] {}'.format(len(iv), iv))
 
 
 # add divider graphic
-divider_width = 420
-position = '+90+385'
+divider_width = 450
+position = '+65+385'
 file_divider = './images/divider-02.png'
 file_divider_resized = '/tmp/passport-resized-divider.png'.format(os.getpid())
 dimensions = '{}x{}'.format(divider_width, divider_width)

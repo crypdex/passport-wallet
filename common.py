@@ -5,7 +5,7 @@ from subprocess import Popen, PIPE
 
 # log
 import logging
-logging.basicConfig(format='%(asctime)-15s %(levelname)s %(message)s', level=logging.DEBUG)
+logging.basicConfig(format='%(asctime)-15s %(levelname)s %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
