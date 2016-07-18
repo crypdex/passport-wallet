@@ -163,16 +163,16 @@ bavg = int(round(bsum / count))
 
 
 # light and dark compliments
-rgb_avg = hex(ravg)[2:].upper() + hex(gavg)[2:].upper() + hex(bavg)[2:].upper()
+rgb_avg = '%02X%02X%02X' % (ravg, gavg, bavg)
 logger.debug('RGB_AVG #' + rgb_avg)
 
 darkness = 2.0
-rgb_dark = hex(int(ravg/darkness))[2:].upper() + hex(int(gavg/darkness))[2:].upper() + hex(int(bavg/darkness))[2:].upper()
-logger.debug('RGB_DARK #' + rgb_dark)
+rgb_dark = '%02X%02X%02X' % (ravg/darkness, gavg/darkness, bavg/darkness)
+logger.debug('RGB_DARK ' + rgb_dark)
 
 lightness = 2.0
-rgb_light = hex(256-int((256-ravg)/lightness))[2:].upper() + hex(256-int((256-gavg)/lightness))[2:].upper() + hex(256-int((256-bavg)/lightness))[2:].upper()
-logger.debug('RGB_LIGHT #' + rgb_light)
+rgb_light = '%02X%02X%02X' % (256-int((256-ravg)/lightness), 256-int((256-gavg)/lightness), 256-int((256-bavg)/lightness))
+logger.debug('RGB_LIGHT ' + rgb_light)
 
 
 # create coin graphic
@@ -252,7 +252,7 @@ qr_width = icon_width * 1.25
 position = '+37+192'
 size = '{}x{}'.format(qr_width+6, qr_width+6)
 file_shadow = '/tmp/passport-qr-shadow-{}.png'.format(os.getpid())
-cmd(['convert', '-size', size, 'xc:#{}'.format(rgb_light), '-fill' , 'none', '-stroke', 'black', file_shadow])
+cmd(['convert', '-size', size, 'xc:#{}'.format(rgb_avg), '-fill' , 'none', '-stroke', 'black', file_shadow])
 cmd(['composite', '-geometry', position, file_shadow, file_output, file_output])
 
 
@@ -289,9 +289,9 @@ logger.debug('IVEC [{}] {}'.format(len(iv), iv))
 
 
 # add divider graphic
-divider_width = 400
-position = '+90+420'
-file_divider = './images/divider.png'
+divider_width = 420
+position = '+90+385'
+file_divider = './images/divider-02.png'
 file_divider_resized = '/tmp/passport-resized-divider.png'.format(os.getpid())
 dimensions = '{}x{}'.format(divider_width, divider_width)
 cmd(['convert', file_divider, '-resize', dimensions, '-fuzz', '100%', '-fill', '#{}'.format(rgb_light), '-opaque', 'white', file_divider_resized])
@@ -361,12 +361,10 @@ for word in words:
         i = len(word) + 1
     txt += word + ' '
 
-print '\n', 'WORDS:', ' '.join(words), '\n'
-
 
 # add words to page
 size = '18'
-position = '+60+515'
+position = '+60+485'
 font = 'Courier-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 

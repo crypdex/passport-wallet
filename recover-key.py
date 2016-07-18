@@ -8,7 +8,7 @@ from pbkdf2 import crypt
 
 
 # get user input
-words_input = raw_input('WORDS:').strip().lower().split()
+words_input = raw_input('WORDS:').lower().split()
 pwd = getpass.getpass('PASSWORD:')
 
 
