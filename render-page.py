@@ -7,8 +7,10 @@ import sys, os, argparse, getpass, time, hashlib
 from random import randint
 from common import logger, cmd, pad, unwrap, break_string, positive_integer
 from common import default_iterations, default_background, salt_length_words
+from common import bytes2words, words2bytes
 from Crypto.Cipher import AES
 from PIL import Image
+from pbkdf2 import crypt
 
 
 # command line arguments
@@ -159,6 +161,7 @@ ravg = int(round(rsum / count))
 gavg = int(round(gsum / count))
 bavg = int(round(bsum / count))
 
+
 # light and dark compliments
 rgb_avg = hex(ravg)[2:].upper() + hex(gavg)[2:].upper() + hex(bavg)[2:].upper()
 logger.debug('RGB_AVG #' + rgb_avg)
@@ -214,7 +217,7 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-p
 position = '+360+265'
 font = 'Courier-Bold'
 #txt = '\n'.join(break_string(address, len(address)/2+1))
-txt = '\n'.join(break_string(address, 15))
+txt = '\\n'.join(break_string(address, 15))
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
@@ -246,8 +249,8 @@ if (comment is not None):
 
 # qr code drop shadow
 qr_width = icon_width * 1.25
-position = '+38+198'
-size = '{}x{}'.format(qr_width+4, qr_width+4)
+position = '+37+192'
+size = '{}x{}'.format(qr_width+6, qr_width+6)
 file_shadow = '/tmp/passport-qr-shadow-{}.png'.format(os.getpid())
 cmd(['convert', '-size', size, 'xc:#{}'.format(rgb_light), '-fill' , 'none', '-stroke', 'black', file_shadow])
 cmd(['composite', '-geometry', position, file_shadow, file_output, file_output])
@@ -255,7 +258,7 @@ cmd(['composite', '-geometry', position, file_shadow, file_output, file_output])
 
 # make qr code
 file_qr = '/tmp/passport-qr-code-{}.png'.format(os.getpid())
-position = '+40+200'
+position = '+40+195'
 cmd(['qrencode', '--foreground', rgb_dark, '-o', file_qr, qr_link])
 cmd(['convert', file_qr, '-resize', '{}x{}'.format(qr_width, qr_width), file_qr])
 cmd(['composite', '-geometry', position, file_qr, file_output, file_output])
@@ -263,7 +266,7 @@ os.remove(file_qr)
 
 
 #
-# word sequence = BIP39(AES(private_key, SHA256^iterations(password + salt)))
+# word sequence = BIP39Encode(AESEncode(private_key, crypt(password + salt, iterations)))
 #
 
 
@@ -273,20 +276,21 @@ with open('words-bip39.csv') as fp:
     lines = fp.readlines()
 bip39 = [line.strip() for line in lines]
 
-    
-# generate salt
+
+# generate nonces
 seed_list = [ bip39[randint(0,len(bip39)-1)] for i in range(salt_length_words) ]
 seed = ' '.join(seed_list)
 logger.debug('SEED [{}] {}'.format(len(seed_list), seed))
-hash = hashlib.sha256(seed).hexdigest()
-logger.debug('HASH [{}] {}'.format(len(hash), hash))
-salt = hash[:16]
+seed_hash = hashlib.sha256(seed).hexdigest()
+salt = seed_hash[:8]
 logger.debug('SALT [{}] {}'.format(len(salt), salt))
+iv = seed_hash[:16]
+logger.debug('IVEC [{}] {}'.format(len(iv), iv)) 
 
 
 # add divider graphic
 divider_width = 400
-position = '+90+425'
+position = '+90+420'
 file_divider = './images/divider.png'
 file_divider_resized = '/tmp/passport-resized-divider.png'.format(os.getpid())
 dimensions = '{}x{}'.format(divider_width, divider_width)
@@ -296,26 +300,17 @@ os.remove(file_divider_resized)
 
 
 # stretch key
-h = pwd + salt
 start = time.time()
 logger.debug('stretching key...')
-
-for i in xrange(hash_iterations):
-    h = hashlib.sha256(h).hexdigest()
-    if ((i+1) % 1000000) == 0:
-        elapsed = time.time() - start
-        logger.debug('{}m hashes in {} seconds'.format(round(i/1000000.0, 1), round(elapsed, 1)))
-
+hashed_password = crypt(pwd, salt=salt, iterations=hash_iterations)
 elapsed = time.time() - start
-logger.debug('{}m hashes in {} seconds'.format(round(i/1000000.0, 1), round(elapsed, 1)))
-
-hashed_password = h
+logger.debug('CRYPT {:,} iterations in {:.1f} seconds'.format(hash_iterations, elapsed))
 logger.debug('HASH length {} bytes'.format(len(hashed_password)))
 
 
-# 32-byte AES key
+# AES key
 aes_key = hashed_password[:32]
-logger.debug('KEY length {}'.format(len(aes_key)))
+logger.debug('KEY length {} bytes'.format(len(aes_key)))
 
 
 # pad input text
@@ -324,14 +319,13 @@ logger.debug('DATA length {:,} bytes'.format(len(payload), payload))
 
 
 # AES encrypt private key with hashed password
-iv = salt  # shared nonce; salt for key stretching is also the AES init vector
 e = AES.new(aes_key, AES.MODE_CBC, iv)
 ciphertext = e.encrypt(payload)
 logger.debug('CIPHERTEXT length {} bytes'.format(len(ciphertext)))
 
 
 # sanity check: decrypt back again
-decryption_suite = AES.new(aes_key, AES.MODE_CBC, salt)
+decryption_suite = AES.new(aes_key, AES.MODE_CBC, iv)
 plain_text = decryption_suite.decrypt(ciphertext)
 if plain_text == payload:
     logger.debug('DECRYPTION sanity check passed')
@@ -340,39 +334,24 @@ else:
     exit(1)
 
 
-# convert 8-bit ciphertext into 11-bit chunks
-i = 0
-chunks = []
-word_cursor = 0
-word_value = 0
+# convert ciphertext byte array into BIP39 word list
+words = bytes2words(ciphertext)
 
-for byte in bytes(ciphertext):
-    o = ord(byte)
-
-    for bit in range(8):
-        if (i - word_cursor) >= 11:
-            chunks.append(word_value)
-            word_cursor = i
-            word_value = 0
-
-        if o & 2**bit:
-            word_value += int(2**(i-word_cursor))
-
-        i += 1
-
-if (len(ciphertext) % 16) > 0:
-    chunks.append(word_value) # remaining bits
-
-
-# convert 11-bit words to English words via BIP39
-column_width = 45
-words = [bip39[i].strip() for i in chunks]
+# sanity check: convert back to bytes and verify
+bytes = words2bytes(words)
+if (bytes == ciphertext):
+    logger.debug('BIP39 conversion sanity check passed')
+else:
+    logger.debug('BIP39 conversion sanity check failed!')
+    exit(1)
 
 
 # prepend salt to word seq
 words = seed_list + words
 
+
 # insert newlines 
+column_width = 45
 i = 0
 txt = ''
 for word in words:
@@ -382,11 +361,22 @@ for word in words:
         i = len(word) + 1
     txt += word + ' '
 
+print '\n', 'WORDS:', ' '.join(words), '\n'
+
 
 # add words to page
 size = '18'
-position = '+60+525'
+position = '+60+515'
 font = 'Courier-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-logger.info('wrote {}'.format(file_output))
+
+# add decrypt recipe
+size = '12'
+position = '+58+715'
+font = 'Helvetica-Oblique'
+txt = 'privkey=AESDecrypt(ciphertext=BIP39Serialize(WORDS[3:]),key=crypt(PASSWORD,\\nsalt=SHA256(WORDS[:3])[:8],iterations={})[-32:],initVec=SHA256(WORDS[:3])[:16])'.format(hash_iterations)
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
+
+
+logger.info('WROTE {}'.format(file_output))
