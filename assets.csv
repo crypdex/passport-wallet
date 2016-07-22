@@ -15,6 +15,7 @@ GEMZ,GetGems,https://www.blockscan.com/address?q={}
 GRC,GridCoin,
 HYPER,Hyper,https://chainz.cryptoid.info/hyper/search.dws?q={}
 IFC,Infinitecoin,https://coinplorer.com/IFC/Addresses/{}
+LSK,Lisk,https://explorer.lisk.io/address/{}
 LTC,Litecoin,https://chain.so/address/LTC/{}
 MAID,MaidSafeCoin,
 MINT,Mintcoin,https://chainz.cryptoid.info/mint/address.dws?{}.htm
