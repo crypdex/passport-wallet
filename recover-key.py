@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
-import sys, time, hashlib, getpass
+import sys, time, hashlib, getpass, pyscrypt
 from Crypto.Cipher import AES
-from common import logger, default_iterations, salt_length_words
-from common import words2bytes
-from pbkdf2 import crypt
+from common import logger, salt_length_words
+from common import words2bytes, scrypt_N, scrypt_r, scrypt_p
 
 
 # get user input
@@ -41,14 +40,12 @@ logger.debug('CIPHERTEXT length {} bytes'.format(len(ciphertext)))
 
 # stretch key
 start = time.time()
-hash_iterations = default_iterations
-logger.debug('ITERATIONS {:,}'.format(hash_iterations))
 logger.debug('stretching key ...')
-hashed_password = crypt(pwd, salt=salt, iterations=hash_iterations)
+hashed_password = pyscrypt.hash(password=pwd, salt=salt, N=scrypt_N, r=scrypt_r, p=scrypt_p, dkLen = 32)
+hashed_hex = hashed_password.encode('hex')
 elapsed = time.time() - start
-logger.debug('CRYPT {:,} iterations in {:.1f} seconds'.format(hash_iterations, elapsed))
-logger.debug('HASH length {} bytes'.format(len(hashed_password)))
-aes_key = hashed_password[:32]
+logger.debug('scrypt(N={},r={},p={}) took {:.1f} seconds'.format(scrypt_N, scrypt_r, scrypt_p, elapsed))
+aes_key = hashed_hex[:32]
 logger.debug('KEY length {} bytes'.format(len(aes_key)))
 
 

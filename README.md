@@ -1,5 +1,14 @@
 # Passport wallet
 
+## Motivation
+
+The benefit of paper wallets is that they are technically un-hackable
+since the keys never exist online to be hacked in the first
+place. However, there is another problem: the wallets must be stored
+securely in the REAL world. Anyone who obtains a copy can access your
+account. It's risky even to print paper wallets because many printers
+keep copies of historic print jobs in local storage.
+
 ## Features
 
 The `render-page.py` script generates a secure paper wallet for *any* crypto-currency.

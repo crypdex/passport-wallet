@@ -3,14 +3,13 @@
 # render an encrypted paper wallet for a single crypto-currency address
 
 
-import sys, os, argparse, getpass, time, hashlib
+import sys, os, argparse, getpass, time, hashlib, pyscrypt
 from random import randint
 from common import logger, cmd, pad, unwrap, break_string, positive_integer
-from common import default_iterations, default_background, salt_length_words
-from common import bytes2words, words2bytes
+from common import default_background, salt_length_words
+from common import bytes2words, words2bytes, scrypt_N, scrypt_r, scrypt_p
 from Crypto.Cipher import AES
 from PIL import Image
-from pbkdf2 import crypt
 
 
 # command line arguments
@@ -20,7 +19,6 @@ parser.add_argument('-n', '--name', help='crypto-currency name (default is name 
 parser.add_argument('-a', '--address', help='public address', nargs=1, required=True)
 parser.add_argument('-k', '--privkey', help='private key', nargs=1, required=True)
 parser.add_argument('-i', '--icon', help='crypto-currency icon file (default ./images/[symbol]-logo.png)', nargs=1, required=False)
-parser.add_argument('-t', '--iterations', help='HASH iterations (default {})'.format(default_iterations), nargs=1, type=positive_integer, default=default_iterations, required=False)
 parser.add_argument('-b', '--background', help='background image (default "{}")'.format(default_background), nargs=1, default=default_background, required=False)
 parser.add_argument('-p', '--password', help='encryption password (user is prompted if not present)', nargs=1, required=False)
 parser.add_argument('-o', '--output', help='output filename (default "./passport-page-[symbol].png")', nargs=1, required=False)
@@ -86,11 +84,6 @@ if (os.path.isfile(file_icon)):
 else:
     logger.critical('icon file does not exist: {}'.format(file_icon))
     exit(1)
-
-
-# hash iterations
-hash_iterations = unwrap(args['iterations'])
-logger.debug('ITERATIONS {:,}'.format(hash_iterations))
 
 
 # background image
@@ -197,51 +190,63 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_light), '-
 
 # currency name
 size = '18'
-position = '+265+240'
+position = '+265+220'
 font = 'Helvetica-Bold'
 txt = "Currency"
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-position = '+360+240'
+position = '+360+220'
 font = 'Courier-Bold'
 txt = cname
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
 # public address
-position = '+265+265'
+position = '+265+245'
 font = 'Helvetica-Bold'
 txt = "Address"
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-position = '+360+265'
+position = '+360+245'
 font = 'Courier-Bold'
-#txt = '\n'.join(break_string(address, len(address)/2+1))
 txt = '\\n'.join(break_string(address, 15))
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
 # creation date
-position = '+265+335'
+position = '+265+315'
 font = 'Helvetica-Bold'
 txt = "Created"
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-position = '+360+335'
+position = '+360+315'
 font = 'Courier-Bold'
 localtime = time.localtime()
 txt = time.strftime("%Y-%m-%d", localtime)
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
+# scrypt params
+position = '+265+340'
+font = 'Helvetica-Bold'
+txt = "Scrypt"
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
+
+position = '+360+340'
+font = 'Courier-Bold'
+localtime = time.localtime()
+txt = 'N={} r={} p={}'.format(scrypt_N, scrypt_r, scrypt_p)
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
+
+
 # optional note
 if (comment is not None):
-    position = '+265+360'
+    position = '+265+365'
     font = 'Helvetica-Bold'
     txt = "Notes"
     cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
-    position = '+360+360'
+    position = '+360+365'
     font = 'Courier-Bold'
     txt = comment
     cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
@@ -254,6 +259,7 @@ size = '{}x{}'.format(qr_width+6, qr_width+6)
 file_shadow = '/tmp/passport-qr-shadow-{}.png'.format(os.getpid())
 cmd(['convert', '-size', size, 'xc:#{}'.format(rgb_avg), '-fill' , 'none', '-stroke', 'black', file_shadow])
 cmd(['composite', '-geometry', position, file_shadow, file_output, file_output])
+os.remove(file_shadow)
 
 
 # make qr code
@@ -266,7 +272,7 @@ os.remove(file_qr)
 
 
 #
-# word sequence = BIP39Encode(AESEncode(private_key, crypt(password + salt, iterations)))
+# word sequence = BIP39Encode(AESEncode(private_key, scrypt(password, salt, N, r, p)))
 #
 
 
@@ -290,7 +296,7 @@ logger.debug('IVEC [{}] {}'.format(len(iv), iv))
 
 # add divider graphic
 divider_width = 450
-position = '+65+385'
+position = '+65+380'
 file_divider = './images/divider-02.png'
 file_divider_resized = '/tmp/passport-resized-divider.png'.format(os.getpid())
 dimensions = '{}x{}'.format(divider_width, divider_width)
@@ -302,14 +308,15 @@ os.remove(file_divider_resized)
 # stretch key
 start = time.time()
 logger.debug('stretching key...')
-hashed_password = crypt(pwd, salt=salt, iterations=hash_iterations)
+hashed_password = pyscrypt.hash(password=pwd, salt=salt, N=scrypt_N, r=scrypt_r, p=scrypt_p, dkLen = 32)
+hashed_hex = hashed_password.encode('hex')
 elapsed = time.time() - start
-logger.debug('CRYPT {:,} iterations in {:.1f} seconds'.format(hash_iterations, elapsed))
+logger.debug('scrypt(N={},r={},p={}) took {:.1f} seconds'.format(scrypt_N, scrypt_r, scrypt_p, elapsed))
 logger.debug('HASH length {} bytes'.format(len(hashed_password)))
 
 
 # AES key
-aes_key = hashed_password[:32]
+aes_key = hashed_hex[:32]
 logger.debug('KEY length {} bytes'.format(len(aes_key)))
 
 
@@ -337,6 +344,7 @@ else:
 # convert ciphertext byte array into BIP39 word list
 words = bytes2words(ciphertext)
 
+
 # sanity check: convert back to bytes and verify
 bytes = words2bytes(words)
 if (bytes == ciphertext):
@@ -348,6 +356,7 @@ else:
 
 # prepend salt to word seq
 words = seed_list + words
+logger.debug('BIP39 WORDS: {}'.format(' '.join(words)))
 
 
 # insert newlines 
@@ -373,7 +382,7 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-p
 size = '12'
 position = '+58+715'
 font = 'Helvetica-Oblique'
-txt = 'privkey=AESDecrypt(ciphertext=BIP39Serialize(WORDS[3:]),key=crypt(PASSWORD,\\nsalt=SHA256(WORDS[:3])[:8],iterations={})[-32:],initVec=SHA256(WORDS[:3])[:16])'.format(hash_iterations)
+txt = 'privkey=AESDecrypt(ciphertext=BIP39Serialize(WORDS[3:]),key=scrypt(PASSWORD,\\nsalt=SHA256(WORDS[:3])[:8],N={},r={},p={})[-32:],initVec=SHA256(WORDS[:3])[:16])'.format(scrypt_N, scrypt_r, scrypt_p)
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
