@@ -5,14 +5,16 @@ from subprocess import Popen, PIPE
 
 # log
 import logging
-logging.basicConfig(format='%(asctime)-15s %(levelname)s %(message)s', level=logging.INFO)
+logging.basicConfig(format='%(asctime)-15s %(levelname)s %(message)s', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
 # config
-default_iterations = 85000
 default_background = './images/passport-background-lines.png'
 salt_length_words = 3
+scrypt_N = 4096
+scrypt_r = 8
+scrypt_p = 1
 
 
 # execute shell command

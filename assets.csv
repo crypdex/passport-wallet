@@ -16,7 +16,7 @@ GRC,GridCoin,
 HYPER,Hyper,https://chainz.cryptoid.info/hyper/search.dws?q={}
 IFC,Infinitecoin,https://coinplorer.com/IFC/Addresses/{}
 LSK,Lisk,https://explorer.lisk.io/address/{}
-LTC,Litecoin,https://chain.so/address/LTC/{}
+LTC,Litecoin,https://live.blockcypher.com/ltc/address/{}/
 MAID,MaidSafeCoin,
 MINT,Mintcoin,https://chainz.cryptoid.info/mint/address.dws?{}.htm
 MONA,MonaCoin,https://mona.chainsight.info/address/{}
