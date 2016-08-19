@@ -8,7 +8,6 @@ from common import words2bytes, scrypt_N, scrypt_r, scrypt_p
 
 # get user input
 words_input = raw_input('WORDS:').lower().split()
-pwd = getpass.getpass('PASSWORD:')
 
 
 # generate nonces
@@ -39,6 +38,7 @@ logger.debug('CIPHERTEXT length {} bytes'.format(len(ciphertext)))
 
 
 # stretch key
+pwd = getpass.getpass('PASSWORD:')
 start = time.time()
 logger.debug('stretching key ...')
 hashed_password = pyscrypt.hash(password=pwd, salt=salt, N=scrypt_N, r=scrypt_r, p=scrypt_p, dkLen = 32)
