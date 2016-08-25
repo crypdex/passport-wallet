@@ -1,12 +1,13 @@
+AMP,Synereo,http://omnichest.info/lookupadd.aspx?address={}
 BCY,Bitcrystals,https://counterpartychain.io/address/{}
-BLK,BlackCoin,https://chainz.cryptoid.info/blk/search.dws?q={}
+BLK,BlackCoin,https://chainz.cryptoid.info/blk/address.dws?{}.htm
 BTC,Bitcoin,https://blockchain.info/address/{}
 BTCD,BitcoinDark,http://explorebtcd.info/address/{}
 BTS,BitShares,
 CLAM,Clams,http://khashier.com/address/{}
 DASH,Dash,https://chainz.cryptoid.info/dash/address.dws?{}.htm
 DGB,DigiByte,http://digiexplorer.info/address/{}
-DOGE,Dogecoin,https://dogechain.info/address/{}
+DOGE,Dogecoin,https://live.blockcypher.com/doge/address/{}/
 EMC,Emercoin,
 ETH,Ethereum,https://etherchain.org/account/0x{}#txreceived
 FLO,FlorinCoin,
