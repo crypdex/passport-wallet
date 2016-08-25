@@ -23,6 +23,7 @@ parser.add_argument('-b', '--background', help='background image (default "{}")'
 parser.add_argument('-p', '--password', help='encryption password (user is prompted if not present)', nargs=1, required=False)
 parser.add_argument('-o', '--output', help='output filename (default "./passport-page-[symbol].png")', nargs=1, required=False)
 parser.add_argument('-c', '--comment', help='add an optional comment', nargs=1, required=False)
+parser.add_argument('--compact', help='enable compact mode', action='store_true', required=False)
 args = vars(parser.parse_args())
 
 
@@ -128,6 +129,11 @@ else:
     logger.debug('no comment present')
 
 
+# compact mode?
+compact = args['compact']
+logger.debug('COMPACT MODE {}'.format(compact))
+
+
 #
 # generate passport image
 #
@@ -209,11 +215,17 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-p
 
 position = '+360+245'
 font = 'Courier-Bold'
-txt = '\\n'.join(break_string(address, 15))
+if (compact):
+    size = '14'
+    txt = '\\n'.join(break_string(address, 25))
+else:
+    txt = '\\n'.join(break_string(address, 15))
+
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
 # creation date
+size = '18'
 position = '+265+315'
 font = 'Helvetica-Bold'
 txt = "Created"
@@ -360,7 +372,7 @@ logger.debug('BIP39 WORDS: {}'.format(' '.join(words)))
 
 
 # insert newlines 
-column_width = 45
+column_width = 50 if compact else 45
 i = 0
 txt = ''
 for word in words:
@@ -372,8 +384,8 @@ for word in words:
 
 
 # add words to page
-size = '18'
-position = '+60+485'
+size = '16' if compact else '18'
+position = '+60+470' if compact else '+60+485'
 font = 'Courier-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
