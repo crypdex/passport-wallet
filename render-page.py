@@ -2,6 +2,7 @@
 
 # render an encrypted paper wallet for a single crypto-currency address
 
+info_file = 'assets.csv'
 
 import sys, os, argparse, getpass, time, hashlib, pyscrypt
 from random import randint
@@ -35,10 +36,21 @@ logger.debug('SYMBOL {}'.format(symbol))
 # currency name
 cname = None
 explorer = None
-with open('assets.csv') as fp:
+n = 0
+with open(info_file) as fp:
     lines = fp.readlines()
     for line in lines:
-        sym, name, link = line.split(',')
+        n += 1
+        sym = None
+        name = None
+        link = None
+
+        try:
+            sym, name, link = line.split(',')
+        except:
+            logger.error('failed to unpack line {} in {}: "{}"'.format(n, info_file, line.strip()))
+            exit(0)
+
         if (sym.upper() == symbol.upper()):
             cname = name.strip()
             if len(link.strip()) > 0:
@@ -188,10 +200,10 @@ os.remove(file_logo_resized)
 
 
 # add currency symbol header
-size = str(256 - (36 * len(symbol)))
+size = str(240 - (36 * len(symbol)))
 position = '+230+{}'.format(210 - (20 * len(symbol)))
 font = 'DejaVu-Sans-Bold'
-cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_light), '-pointsize', size, '-annotate', position, symbol, file_output])
+cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_avg), '-pointsize', size, '-annotate', position, symbol, file_output])
 
 
 # currency name
@@ -217,9 +229,9 @@ position = '+360+245'
 font = 'Courier-Bold'
 if (compact):
     size = '14'
-    txt = '\\n'.join(break_string(address, 25))
+    txt = '\\n'.join(break_string(address, 26))
 else:
-    txt = '\\n'.join(break_string(address, 15))
+    txt = '\\n'.join(break_string(address, 18))
 
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
@@ -308,7 +320,7 @@ logger.debug('IVEC [{}] {}'.format(len(iv), iv))
 
 # add divider graphic
 divider_width = 450
-position = '+65+380'
+position = '+65+360' if compact else '+65+375'
 file_divider = './images/divider-02.png'
 file_divider_resized = '/tmp/passport-resized-divider.png'.format(os.getpid())
 dimensions = '{}x{}'.format(divider_width, divider_width)
@@ -372,7 +384,7 @@ logger.debug('BIP39 WORDS: {}'.format(' '.join(words)))
 
 
 # insert newlines 
-column_width = 50 if compact else 45
+column_width = 64 if compact else 45
 i = 0
 txt = ''
 for word in words:
@@ -384,15 +396,15 @@ for word in words:
 
 
 # add words to page
-size = '16' if compact else '18'
-position = '+60+470' if compact else '+60+485'
+size = '14' if compact else '18'
+position = '+60+445' if compact else '+60+485'
 font = 'Courier-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 
 
 # add decrypt recipe
 size = '12'
-position = '+58+715'
+position = '+58+735'
 font = 'Helvetica-Oblique'
 txt = 'privkey=AESDecrypt(ciphertext=BIP39Serialize(WORDS[3:]),key=scrypt(PASSWORD,\\nsalt=SHA256(WORDS[:3])[:8],N={},r={},p={})[-32:],initVec=SHA256(WORDS[:3])[:16])'.format(scrypt_N, scrypt_r, scrypt_p)
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
