@@ -4,13 +4,16 @@
 
 info_file = 'assets.csv'
 
-import sys, os, argparse, getpass, time, hashlib, pyscrypt
+import sys, os, argparse, getpass, time, hashlib, pyscrypt, logging
 from random import randint
 from common import logger, cmd, pad, unwrap, break_string, positive_integer
 from common import default_background, salt_length_words
 from common import bytes2words, words2bytes, scrypt_N, scrypt_r, scrypt_p
 from Crypto.Cipher import AES
 from PIL import Image
+
+
+logger.setLevel(logging.INFO)
 
 
 # command line arguments
@@ -380,7 +383,7 @@ else:
 
 # prepend salt to word seq
 words = seed_list + words
-logger.debug('BIP39 WORDS: {}'.format(' '.join(words)))
+logger.info('BIP39 WORDS: {}'.format(' '.join(words)))
 
 
 # insert newlines 
@@ -397,7 +400,7 @@ for word in words:
 
 # add words to page
 size = '14' if compact else '18'
-position = '+60+445' if compact else '+60+485'
+position = '+60+442' if compact else '+60+485'
 font = 'Courier-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
 

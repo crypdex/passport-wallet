@@ -1,9 +1,12 @@
 #!/usr/bin/env python
 
-import sys, time, hashlib, getpass, pyscrypt
+import sys, time, hashlib, getpass, pyscrypt, logging
 from Crypto.Cipher import AES
 from common import logger, salt_length_words
 from common import words2bytes, scrypt_N, scrypt_r, scrypt_p
+
+
+logger.setLevel(logging.INFO)
 
 
 # get user input
