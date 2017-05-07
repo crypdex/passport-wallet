@@ -7,6 +7,7 @@ BTCD,BitcoinDark,http://explorebtcd.info/address/{}
 CLAM,Clams,http://khashier.com/address/{}
 DASH,Dash,https://chainz.cryptoid.info/dash/address.dws?{}.htm
 DGB,DigiByte,http://digiexplorer.info/address/{}
+DGD,DigixDAO,https://etherscan.io/token/DGD?a={}
 DOGE,Dogecoin,https://live.blockcypher.com/doge/address/{}/
 EDG,Edgeless,https://etherscan.io/token/Edgeless?a={}
 EMC,Emercoin,https://emercoin.mintr.org/address/{}
@@ -18,6 +19,7 @@ GEMZ,GetGems,https://www.blockscan.com/address?q={}
 GNO,Gnosis,https://etherscan.io/token/Gnosis?a={}
 GNT,Golem,https://etherscan.io/token/Golem?a={}
 HYPER,Hyper,https://chainz.cryptoid.info/hyper/search.dws?q={}
+ICN,Iconomi,https://etherscan.io/token/ICONOMI?a={}
 IFC,Infinitecoin,https://coinplorer.com/IFC/Addresses/{}
 ION,Ionomy,https://chainz.cryptoid.info/ion/address.dws?{}.htm
 LSK,Lisk,https://explorer.lisk.io/address/{}
@@ -42,10 +44,13 @@ START,Startcoin,http://explorer.startcoin.org/address/{}
 STEEM,Steem,
 SWT,Swarm City,https://etherscan.io/token/0xb9e7f8568e08d5659f5d29c4997173d84cdf2607?a={}
 SYS,SysCoin,https://chainz.cryptoid.info/sys/address.dws?{}.htm
+TIME,ChronoBank,https://etherscan.io/token/TIME?a={}
+TRST,WeTrust,https://etherscan.io/token/Trustcoin?a={}
 VOX,Voxels,https://www.blockexperts.com/vox/address/{}
 VRC,VeriCoin,https://chainz.cryptoid.info/vrc/address.dws?{}.htm
 VTC,Vertcoin,https://bitinfocharts.com/vertcoin/address/{}
 WAVES,Waves,https://wavesexplorer.com/address/{}
+WINGS,Wings,https://etherscan.io/token/WINGS?a={}
 XCP,Counterparty,https://blockscan.com/address?q={}
 XDN,DigitalNote,http://chainradar.com/xdn/block/{}
 XMR,Monero,
