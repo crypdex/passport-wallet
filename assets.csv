@@ -1,5 +1,7 @@
 1ST,First Blood,https://etherscan.io/token/FirstBlood?a={}
 AMP,Synereo,http://omnichest.info/lookupadd.aspx?address={}
+ANT,Aragon,https://etherscan.io/token/Aragon?a={}
+BCH,Bitcoin Cash,https://www.blocktrail.com/BCC/address/{}
 BCY,Bitcrystals,https://counterpartychain.io/address/{}
 BLK,BlackCoin,https://chainz.cryptoid.info/blk/address.dws?{}.htm
 BTC,Bitcoin,https://blockchain.info/address/{}
@@ -15,6 +17,7 @@ ETC,Ethereum Classic,https://gastracker.io/addr/{}
 ETH,Ethereum,https://etherchain.org/account/{}#txreceived
 FCT,Factoids,http://explorer.factom.org/address/{}
 FTC,Feathercoin,http://explorer.feathercoin.com/address/{}
+GAME,GameCredits,https://blockexplorer.gamecredits.com/addresses/{}
 GEMZ,GetGems,https://www.blockscan.com/address?q={}
 GNO,Gnosis,https://etherscan.io/token/Gnosis?a={}
 GNT,Golem,https://etherscan.io/token/Golem?a={}
