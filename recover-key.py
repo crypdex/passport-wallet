@@ -9,8 +9,28 @@ from common import words2bytes, scrypt_N, scrypt_r, scrypt_p
 logger.setLevel(logging.INFO)
 
 
+# load BIP39 dictionary
+with open('words-bip39.csv') as fp:
+    lines = fp.readlines()
+bip39_words = [line.strip() for line in lines]
+
+
 # get user input
 words_input = raw_input('WORDS:').lower().split()
+
+# validate words
+pos = 1
+invalid = False
+for word in words_input:
+    try:
+        check = bip39_words.index(word)
+    except ValueError:
+        logger.error('invalid word in position {}: {}'.format(pos, word))
+        invalid = True
+    pos += 1
+
+if invalid:
+    exit(0)
 
 
 # generate nonces
@@ -24,20 +44,18 @@ iv = seed_hash[:16]
 logger.debug('IVEC [{}] {}'.format(len(iv), iv)) 
 
 
-# load BIP39 dictionary
-with open('words-bip39.csv') as fp:
-    lines = fp.readlines()
-bip39_words = [line.strip() for line in lines]
-
-    
-# convert BIP39 words to 11-bit numbers
+# convert words to 11-bit numbers
 words = words_input[salt_length_words:]
 indexes = [bip39_words.index(word) for word in words]
 
 
 # convert 11-bit words to ciphertext byte array
 ciphertext = words2bytes(words)
-logger.debug('CIPHERTEXT length {} bytes'.format(len(ciphertext)))
+clen = len(ciphertext)
+logger.debug('CIPHERTEXT length {} bytes'.format(clen))
+if (clen % 16) != 0:
+    logger.error('ciphertext length is {} but must be a multiple of 16'.format(clen))
+    exit(0)
 
 
 # stretch key
@@ -56,4 +74,3 @@ logger.debug('KEY length {} bytes'.format(len(aes_key)))
 d = AES.new(aes_key, AES.MODE_CBC, iv)
 plaintext = d.decrypt(ciphertext).strip()
 logger.info('PLAINTEXT [{}] {}'.format(len(plaintext), plaintext))
-
