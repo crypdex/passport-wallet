@@ -28,7 +28,13 @@ parser.add_argument('-p', '--password', help='encryption password (user is promp
 parser.add_argument('-o', '--output', help='output filename (default "./passport-page-[symbol].png")', nargs=1, required=False)
 parser.add_argument('-c', '--comment', help='add an optional comment', nargs=1, required=False)
 parser.add_argument('--compact', help='enable compact mode', action='store_true', required=False)
+parser.add_argument('-v', '--verbose', help='show verbose output', action='store_true', required=False)
 args = vars(parser.parse_args())
+
+if (args['verbose']):
+    logger.setLevel(logging.DEBUG)
+else:
+    logger.setLevel(logging.INFO)
 
 
 # currency symbol
