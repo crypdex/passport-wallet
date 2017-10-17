@@ -1,26 +1,32 @@
 1ST,First Blood,https://etherscan.io/token/FirstBlood?a={}
 AMP,Synereo,http://omnichest.info/lookupadd.aspx?address={}
 ANT,Aragon,https://etherscan.io/token/Aragon?a={}
+BAT,BasicAttentionToken,https://etherscan.io/token/BAT?a={}
 BCH,Bitcoin Cash,https://www.blocktrail.com/BCC/address/{}
 BCY,Bitcrystals,https://counterpartychain.io/address/{}
 BLK,BlackCoin,https://chainz.cryptoid.info/blk/address.dws?{}.htm
+BQX,Bitquence,https://etherscan.io/token/Bitquence?a={}
 BTC,Bitcoin,https://blockchain.info/address/{}
 BTCD,BitcoinDark,http://explorebtcd.info/address/{}
 CLAM,Clams,http://khashier.com/address/{}
+CVC,Civic,https://etherscan.io/token/Civic?a={}
 DASH,Dash,https://chainz.cryptoid.info/dash/address.dws?{}.htm
 DGB,DigiByte,http://digiexplorer.info/address/{}
 DGD,DigixDAO,https://etherscan.io/token/DGD?a={}
 DOGE,Dogecoin,https://live.blockcypher.com/doge/address/{}/
 EDG,Edgeless,https://etherscan.io/token/Edgeless?a={}
 EMC,Emercoin,https://emercoin.mintr.org/address/{}
+EOS,EOS,https://etherscan.io/token/EOS?a={}
 ETC,Ethereum Classic,https://gastracker.io/addr/{}
 ETH,Ethereum,https://etherchain.org/account/{}#txreceived
 FCT,Factoids,http://explorer.factom.org/address/{}
 FTC,Feathercoin,http://explorer.feathercoin.com/address/{}
+FUN,FunFair,https://etherscan.io/token/FunFair?a={}
 GAME,GameCredits,https://blockexplorer.gamecredits.com/addresses/{}
 GEMZ,GetGems,https://www.blockscan.com/address?q={}
 GNO,Gnosis,https://etherscan.io/token/Gnosis?a={}
 GNT,Golem,https://etherscan.io/token/Golem?a={}
+HMQ,Humaniq,https://etherscan.io/token/Humaniq?a={}
 HYPER,Hyper,https://chainz.cryptoid.info/hyper/search.dws?q={}
 ICN,Iconomi,https://etherscan.io/token/ICONOMI?a={}
 IFC,Infinitecoin,https://coinplorer.com/IFC/Addresses/{}
@@ -28,25 +34,34 @@ ION,Ionomy,https://chainz.cryptoid.info/ion/address.dws?{}.htm
 LSK,Lisk,https://explorer.lisk.io/address/{}
 LTC,Litecoin,https://live.blockcypher.com/ltc/address/{}/
 MAID,MaidSafeCoin,
+MCO,Monaco,https://etherscan.io/token/Monaco?a={}
 MINT,Mintcoin,https://chainz.cryptoid.info/mint/address.dws?{}.htm
+MGO,MobileGo,https://etherscan.io/token/0x40395044Ac3c0C57051906dA938B54BD6557F212?a={}
 MLN,Melonport,https://etherscan.io/token/Melon?a={}
-MONA,MonaCoin,https://mona.chainsight.info/address/{}
+MONA,MonaCoin,https://bchain.info/MONA/addr/{}
+MTL,Metal,https://etherscan.io/token/0xF433089366899D83a9f26A773D59ec7eCF30355e?a={}
+NEO,NEO,https://neotracker.io/address/{}
 NMC,Namecoin,http://namecha.in/address/{}
 NVC,Novacoin,https://bchain.info/NVC/addr/{}
 NXT,Nxt,https://www.mynxt.info/account/{}
+OMG,OmiseGo,https://etherscan.io/token/OmiseGo?a={}
 OMNI,Omni,http://omnichest.info/lookupadd.aspx?address={}
+PAY,TenX,https://etherscan.io/token/TenXPay?a={}
 POT,PotCoin,https://chainz.cryptoid.info/pot/address.dws?{}.htm
 PPC,Peercoin,https://chainz.cryptoid.info/ppc/address.dws?{}.htm
 RDD,ReddCoin,https://bchain.info/RDD/addr/{}
 REP,Augur,https://etherscan.io/token/REP?a={}
+RISE,Rise,https://explorer.rise.vision/address/{}
 SC,Siacoin,https://explore.sia.tech/hash.html?hash={}
 SDC,ShadowCash,https://chainz.cryptoid.info/sdc/address.dws?{}.htm
 SJCX,StorjcoinX,https://counterpartychain.io/address/{}
 SNGLS,Singular DTV,https://etherscan.io/token/SNGLS?a={}
 START,Startcoin,http://explorer.startcoin.org/address/{}
 STEEM,Steem,
+STORJ,Storj,https://etherscan.io/token/Storj?a={}
 SWT,Swarm City,https://etherscan.io/token/0xb9e7f8568e08d5659f5d29c4997173d84cdf2607?a={}
 SYS,SysCoin,https://chainz.cryptoid.info/sys/address.dws?{}.htm
+TAAS,TaaS,https://etherscan.io/token/TAAS?a={}
 TIME,ChronoBank,https://etherscan.io/token/TIME?a={}
 TRST,WeTrust,https://etherscan.io/token/Trustcoin?a={}
 VOX,Voxels,https://www.blockexperts.com/vox/address/{}
@@ -54,8 +69,10 @@ VRC,VeriCoin,https://chainz.cryptoid.info/vrc/address.dws?{}.htm
 VTC,Vertcoin,https://bitinfocharts.com/vertcoin/address/{}
 WAVES,Waves,https://wavesexplorer.com/address/{}
 WINGS,Wings,https://etherscan.io/token/WINGS?a={}
+XAS,ASCH,http://aschd.org/address/{}
 XCP,Counterparty,https://blockscan.com/address?q={}
 XDN,DigitalNote,http://chainradar.com/xdn/block/{}
+XEM,NEM,http://explorer.ournem.com/#/s_account?account={}
 XMR,Monero,
 XPM,Primecoin,https://coinplorer.com/XPM/Addresses/{}
 XRP,Ripple,https://bithomp.com/explorer/{}
