@@ -8,6 +8,7 @@ BLK,BlackCoin,https://chainz.cryptoid.info/blk/address.dws?{}.htm
 BQX,Bitquence,https://etherscan.io/token/Bitquence?a={}
 BTC,Bitcoin,https://blockchain.info/address/{}
 BTCD,BitcoinDark,http://explorebtcd.info/address/{}
+BTG,Bitcoin Gold,https://bitinfocharts.com/bitcoin%20gold/address/{}
 CLAM,Clams,http://khashier.com/address/{}
 CVC,Civic,https://etherscan.io/token/Civic?a={}
 DASH,Dash,https://chainz.cryptoid.info/dash/address.dws?{}.htm
