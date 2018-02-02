@@ -237,8 +237,8 @@ cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-p
 position = '+360+245'
 font = 'Courier-Bold'
 if (compact):
-    size = '14'
-    txt = '\\n'.join(break_string(address, 26))
+    size = '16'
+    txt = '\\n'.join(break_string(address, 20))
 else:
     txt = '\\n'.join(break_string(address, 18))
 
@@ -393,7 +393,7 @@ logger.info('BIP39 WORDS: {}'.format(' '.join(words)))
 
 
 # insert newlines 
-column_width = 64 if compact else 45
+column_width = 50 if compact else 45
 i = 0
 txt = ''
 for word in words:
@@ -405,7 +405,7 @@ for word in words:
 
 
 # add words to page
-size = '14' if compact else '18'
+size = '16' if compact else '18'
 position = '+60+442' if compact else '+60+485'
 font = 'Courier-Bold'
 cmd(['convert', file_output, '-font', font, '-fill', '#{}'.format(rgb_dark), '-pointsize', size, '-annotate', position, txt, file_output])
